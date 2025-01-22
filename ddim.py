@@ -31,7 +31,8 @@ def q_sample(batch, t, alphas, batch_size):
     noise = torch.randn_like(batch)
     sqrt_alpha_t = torch.sqrt(alphas[t]).view(batch_size, 1, 1, 1)
     sqrt_one_minus_alpha_t = torch.sqrt((1 - alphas)[t]).view(batch_size, 1, 1, 1)
-    return sqrt_alpha_t * batch + sqrt_one_minus_alpha_t * noise
+    x_t = sqrt_alpha_t * batch + sqrt_one_minus_alpha_t * noise
+    return x_t, noise
 
 # visualisation diffusion
 def visualize_diffusion_step(noise_batch, alphas, num_steps, batch_size):

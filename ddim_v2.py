@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 import torchvision.datasets as datasets
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import Subset
 
 from tqdm import tqdm
 from torch.utils.data import random_split, DataLoader
@@ -62,8 +63,8 @@ class UNet(nn.Module):
     def __init__(self):
         super().__init__()
         image_channel = 1  # Black-and-white images
-        down_channel = (64, 128, 256, 512)
-        up_channel = (512, 256, 128, 64)
+        down_channel = (64, 128, 256)
+        up_channel = (256, 128, 64)
         out_dim = 1
         time_emb_dim = 32
 
@@ -120,9 +121,7 @@ class UNet(nn.Module):
 
 
 class DiffusionTrainer:
-    def __init__(self, model, optimizer, train_loader,
-                 T, alphas, sigmas,
-                 device="cuda", img_size=28, sample_interval=2):
+    def __init__(self, model, optimizer, train_loader, T, alphas, sigmas, device="cuda", img_size=28, sample_interval=2):
         """
         Args:
             model: Le UNet (ou tout autre réseau) à entraîner.
@@ -154,7 +153,8 @@ class DiffusionTrainer:
         noise = torch.randn_like(x0)
         sqrt_alpha_t = torch.sqrt(self.alphas[t]).view(-1, 1, 1, 1)
         sqrt_one_minus_alpha_t = torch.sqrt(1. - self.alphas[t]).view(-1, 1, 1, 1)
-        return sqrt_alpha_t * x0 + sqrt_one_minus_alpha_t * noise
+        x_t = sqrt_alpha_t * x0 + sqrt_one_minus_alpha_t * noise
+        return x_t, noise
 
     @torch.no_grad()
     def p_sample(self, x_t, t, eps_theta):
@@ -175,8 +175,7 @@ class DiffusionTrainer:
 
         mean = (
             torch.sqrt(alpha_t_1) * x0_pred
-            + torch.sqrt(1. - alpha_t_1 - sigma_t**2)
-              * (x_t - torch.sqrt(alpha_t) * x0_pred) / torch.sqrt(alpha_t)
+            + torch.sqrt(1. - alpha_t_1 - sigma_t**2) * eps_theta
         )
         noise = sigma_t * torch.randn_like(x_t)
         return mean + noise
@@ -185,22 +184,25 @@ class DiffusionTrainer:
     def sample_image(self, epoch):
         T = self.T
         img = torch.randn((1, 1, self.img_size, self.img_size), device=self.device)
-        num_images = 10
-        stepsize = max(1, T // (num_images - 1))
+        num_images = 11
+        stepsize = max(1, T // (num_images-1))
 
         plt.figure(figsize=(15, 3))
         plt.subplot(1, num_images, 1)
         plt.imshow(img[0][0].detach().cpu().numpy(), cmap='gray')
         plt.title("x_T")
         plt.axis('off')
+        
 
         for i in reversed(range(T)):
             eps_theta = self.model(img, torch.tensor([i], device=self.device).long())
             img = self.p_sample(img, i, eps_theta)
-
             if i % stepsize == 0:
                 idx = (T - i) // stepsize + 1
                 plt.subplot(1, num_images, idx)
+                #x_show = img[0][0].clone()
+                #x_show = (x_show - x_show.min()) / (x_show.max() - x_show.min() + 1e-8)
+                #plt.imshow(x_show.cpu().numpy(), cmap='gray')
                 plt.imshow(img[0][0].detach().cpu().numpy(), cmap='gray')
                 plt.title(f"t={i}")
                 plt.axis('off')
@@ -221,8 +223,8 @@ class DiffusionTrainer:
 
                 t = torch.randint(0, self.T, (batch_size,), device=self.device).long()
 
-                x_t = self.q_sample(images, t)
-                noise = torch.randn_like(images)
+                #noise = torch.randn_like(images)
+                x_t, noise = self.q_sample(images, t)
 
                 noise_pred = self.model(x_t, t)
 
@@ -240,7 +242,7 @@ class DiffusionTrainer:
             if (epoch + 1) % self.sample_interval == 0:
                 self.sample_image(epoch + 1)
             if (epoch + 1) % (self.sample_interval*10) == 0:
-                torch.save(self.model.state_dict(), f"model_ckpt_{epoch}.pth")
+                torch.save(self.model.state_dict(), f"model_ckpt_{epoch + 1}.pth")
 
 
 def make_beta_schedule(num_timesteps, start=1e-4, end=0.02):
@@ -253,25 +255,35 @@ def main():
     print(device)
     batch_size = 64
     img_size = 28
-    T = 1000 
+    T = 100
 
-    transform = transforms.Compose([
+    """ transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
+    ]) """
+    transform = transforms.Compose([
+        transforms.ToTensor(),                 # Convertit l'image [0,1]
+        transforms.Lambda(lambda x: x * 2 - 1) # Convertit [0,1] -> [-1,1]
     ])
 
-    train_dataset = datasets.MNIST(
-        root="/data",
-        train=True,
-        download=True,
-        transform=transform
-    )
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    mnist_dataset = datasets.MNIST(
+    root="./data",
+    train=True,
+    download=True,
+    transform=transform
+)
+
+    #indices = [i for i, (_, label) in enumerate(mnist_dataset) if label == 3]
+
+    #train_set = Subset(mnist_dataset, indices)
+
+
+    train_loader = DataLoader(mnist_dataset, batch_size=batch_size, shuffle=True)
 
     betas = make_beta_schedule(T, start=1e-4, end=0.02)
     alphas = 1. - betas
     alphas = torch.cumprod(alphas, dim=0)
-    eta = 0.5
+    eta = 0
     sigmas = eta * torch.sqrt(1. - alphas).to(device)
 
     #sigmas = 0.0 * torch.ones_like(alphas) samplit deterministe
