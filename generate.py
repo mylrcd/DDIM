@@ -1,82 +1,78 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import matplotlib
 matplotlib.use('Agg')  # si pas d'interface graphique
 import matplotlib.pyplot as plt
+import argparse
 
-from ddim_v2 import UNet
-from ddim import q_sample, p_sample
+from unet import UNet
+from ddim import sample_image
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+BATCH_SIZE = 64
+T = 1000
+LEARNING_RATE = 1e-3
+BETAS_START = 1e-4
+BETAS_END = 0.02
+ETA = 0
+num_channels = 1
 
-def load_checkpoint(model, ckpt_path, device="cuda"):
-    """
-    Charge les poids stockés dans un .pth ou .pt.
-    """
-    state_dict = torch.load(ckpt_path, map_location=device)
-    model.load_state_dict(state_dict)
-    return model
+def setup_diffusion_params(T, device, eta):
+    betas = torch.linspace(BETAS_START, BETAS_END, T)
+    alphas = 1. - betas
+    alphas_cumprod = torch.cumprod(alphas, dim=0)
+    sigmas = eta * torch.sqrt(1. - alphas_cumprod).to(device)
+    return alphas_cumprod, sigmas
 
-# ================================================
-# 2) La fonction principale de génération
-# ================================================
 def generate_images(
-    ckpt_path="model_ckpt_100.pth",
     T=1000,
     alphas=None,
     sigmas=None,
     num_images=5,
     img_size=28,
+    dataset_name="MNIST",
     device="cuda"
 ):
-    """
-    Charge un modèle, génère num_images échantillons,
-    et les sauvegarde en png.
-    """
-    # 1) Créer le modèle
-    model = UNet().to(device)
+    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_ckpt_50.pth"
+    num_channels = 1 if dataset_name == "MNIST" else 3
+    img_size = 28 if dataset_name == "MNIST" else 32
+    display_color = 'gray' if dataset_name == "MNIST" else None
+    
+    model = UNet(num_channels).to(device)
+    model.load_state_dict(torch.load(ckpt_path, weights_only=False))
     model.eval()
 
-    # 2) Charger le checkpoint
-    model = load_checkpoint(model, ckpt_path, device)
-
-    # 3) Générer des images
-    for idx in range(num_images):
-        # On part d'un bruit gaussien x_T
-        x_t = torch.randn((1, 1, img_size, img_size), device=device)
-        # Descente de T-1 à 0
-        for i in reversed(range(T)):
-            eps_theta = model(x_t, torch.tensor([i], device=device).long())
-            x_t = p_sample(x_t, i, alphas, eps_theta[0], sigmas)
-
-        # x_t est maintenant x_0 (théoriquement)
-        final_img = x_t[0][0].detach().cpu().numpy()
-
-        # 4) Sauvegarder l'image
-        plt.figure()
-        plt.imshow(final_img, cmap='gray')
-        plt.axis('off')
-        plt.savefig(f"generated_{idx}.png")
-        plt.close()
-
-# ================================================
-# 3) Point d'entrée pour lancer dans le terminal
-# ================================================
+    sample_image(T, img_size, alphas, sigmas, num_channels, f"TEST_{dataset_name}", display_color, model, 1, device)
+    
+        
 if __name__ == "__main__":
+    #python script.py --dataset MNIST
+    
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    # Suppose qu'on recrée le même schedule
-    # qu'à l'entraînement :
-    T = 1000
-    betas = torch.linspace(1e-4, 0.02, T)
-    alphas = 1. - betas
-    sigmas = 0.0 * torch.ones_like(alphas)  # ex. DDIM déterministe
+    print(f"Device utilisé : {device}")
 
-    generate_images(
-        ckpt_path="model_ckpt.pth",
-        T=T,
-        alphas=alphas.to(device),
-        sigmas=sigmas.to(device),
-        num_images=5,
-        img_size=28,
-        device=device
+    alphas, sigmas = setup_diffusion_params(T, DEVICE, ETA)
+    
+    parser = argparse.ArgumentParser(description="Entraînez un modèle de diffusion sur MNIST ou CIFAR-10.")
+    parser.add_argument(
+        "--dataset", 
+        type=str, 
+        required=True, 
+        choices=["MNIST", "CIFAR"], 
+        help="Nom du dataset à entraîner (MNIST ou CIFAR)."
     )
+
+    args = parser.parse_args()
+    
+    try:
+        generate_images(
+            T=T,
+            alphas=alphas.to(device),
+            sigmas=sigmas.to(device),
+            num_images=5,
+            img_size=28,
+            dataset_name=args.dataset,
+            device=device
+        )
+        print("Images générées avec succès.")
+    except Exception as e:
+        print(f"Erreur lors de la génération des images : {e}")

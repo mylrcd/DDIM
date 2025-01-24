@@ -1,0 +1,6 @@
+__pycache__/trainer.cpython-312.pyc
+__pycache__/unet.cpython-312.pyc
+data/CIFAR/
+notebook/
+obs/
+results/
