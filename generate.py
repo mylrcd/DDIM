@@ -10,6 +10,7 @@ from ddim import sample_image
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 64
 T = 1000
+N = 50
 LEARNING_RATE = 1e-3
 BETAS_START = 1e-4
 BETAS_END = 0.02
@@ -32,12 +33,12 @@ def generate_images(
     dataset_name="MNIST",
     device="cuda"
 ):
-    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_ckpt_50.pth"
+    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_ckpt_200.pth"
     num_channels = 1 if dataset_name == "MNIST" else 3
     img_size = 28 if dataset_name == "MNIST" else 32
     display_color = 'gray' if dataset_name == "MNIST" else None
     model = UNet(num_channels).to(device)
-    model.load_state_dict(torch.load(ckpt_path, weights_only=False, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(ckpt_path, weights_only=False)) #map_location=torch.device('cpu')
     model.eval()
 
     sample_image(T, img_size, alphas, sigmas, N, num_channels, f"TEST_{dataset_name}", display_color, model, 1, device)
@@ -67,7 +68,7 @@ if __name__ == "__main__":
             T=T,
             alphas=alphas.to(device),
             sigmas=sigmas.to(device),
-            N = 50,
+            N = N,
             img_size=28,
             dataset_name=args.dataset,
             device=device

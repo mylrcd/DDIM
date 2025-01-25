@@ -43,7 +43,7 @@ def sample_image(T, img_size, alphas, sigmas, N, num_channels, dataset_name, dis
     img_display = torch.clamp(img_display, 0., 1.)
     img = torch.clamp(img, -1., 1.)
     num_images = 11
-    tau = torch.linspace(0, T-1, steps=N, dtype=torch.long).tolist()
+    tau = torch.linspace(0, T-1, steps=int(N), dtype=torch.long).tolist()
     #tau = torch.linspace(0, T-1, steps=N+1, dtype=torch.long)
     alphas = alphas[tau]
     sigmas = sigmas[tau]

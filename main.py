@@ -56,14 +56,14 @@ def get_dataloader(dataset_name, batch_size):
 def setup_diffusion_params(T, device, eta):
     betas = torch.linspace(BETAS_START, BETAS_END, T)
     alphas = 1. - betas
-    alphas_cumprod = torch.cumprod(alphas, dim=0)
+    alphas_cumprod = torch.cumprod(alphas, dim=0).to(device)
     #sigmas = eta * torch.sqrt(1. - alphas_cumprod).to(device)
     tau = torch.arange(0, T, device=device)
     sigmas = torch.rand_like(alphas)
     sigmas[0] = 1.e-2
     sigmas[1:] = ETA * torch.sqrt((1 - alphas_cumprod[tau[:-1]]) / (1 - alphas_cumprod[tau[1:]])) \
             * torch.sqrt((1 - alphas_cumprod[tau[1:]]) / alphas_cumprod[tau[:-1]])
-
+    sigmas = sigmas.to(device)
     return alphas_cumprod, sigmas
 
 def train_diffusion_model(dataset_name, epochs=1):
@@ -78,7 +78,6 @@ def train_diffusion_model(dataset_name, epochs=1):
 
     model = UNet(num_channels).to(DEVICE)
     optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
-
     trainer = DiffusionTrainer(
         model=model,
         optimizer=optimizer,

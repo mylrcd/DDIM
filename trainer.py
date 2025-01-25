@@ -16,7 +16,7 @@ class DiffusionTrainer:
         self.T = T
         self.alphas = alphas.to(device)
         self.sigmas = sigmas.to(device)
-        self.N = N,
+        self.N = N
         self.img_size = img_size
         self.num_channels = num_channels
         self.dataset_name = dataset_name
