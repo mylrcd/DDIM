@@ -27,7 +27,7 @@ def generate_images(
     T=1000,
     alphas=None,
     sigmas=None,
-    num_images=5,
+    N = 50,
     img_size=28,
     dataset_name="MNIST",
     device="cuda"
@@ -36,12 +36,11 @@ def generate_images(
     num_channels = 1 if dataset_name == "MNIST" else 3
     img_size = 28 if dataset_name == "MNIST" else 32
     display_color = 'gray' if dataset_name == "MNIST" else None
-    
     model = UNet(num_channels).to(device)
-    model.load_state_dict(torch.load(ckpt_path, weights_only=False))
+    model.load_state_dict(torch.load(ckpt_path, weights_only=False, map_location=torch.device('cpu')))
     model.eval()
 
-    sample_image(T, img_size, alphas, sigmas, num_channels, f"TEST_{dataset_name}", display_color, model, 1, device)
+    sample_image(T, img_size, alphas, sigmas, N, num_channels, f"TEST_{dataset_name}", display_color, model, 1, device)
     
         
 if __name__ == "__main__":
@@ -68,7 +67,7 @@ if __name__ == "__main__":
             T=T,
             alphas=alphas.to(device),
             sigmas=sigmas.to(device),
-            num_images=5,
+            N = 50,
             img_size=28,
             dataset_name=args.dataset,
             device=device

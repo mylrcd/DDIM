@@ -36,37 +36,38 @@ def p_sample(x_t, t, alphas, sigmas, eps_theta):
     return mean + noise
 
 @torch.no_grad()
-def sample_image(T, img_size, alphas, sigmas, num_channels, dataset_name, display_color, model, epoch, device):
+def sample_image(T, img_size, alphas, sigmas, N, num_channels, dataset_name, display_color, model, epoch, device):
     img = torch.randn((1, num_channels, img_size, img_size), device=device)
     img = img.permute(0, 2, 3, 1)
     img_display = img[0] * 0.5 + 0.5
     img_display = torch.clamp(img_display, 0., 1.)
     img = torch.clamp(img, -1., 1.)
     num_images = 11
-    stepsize = max(1, T // (num_images-1))
+    tau = torch.linspace(0, T-1, steps=N, dtype=torch.long).tolist()
+    #tau = torch.linspace(0, T-1, steps=N+1, dtype=torch.long)
+    alphas = alphas[tau]
+    sigmas = sigmas[tau]
+    
     plt.figure(figsize=(15, 3))
     plt.subplot(1, num_images, 1)
     plt.imshow(img_display.detach().cpu().numpy(), cmap=display_color if display_color == 'gray' else None)
     plt.title("x_T")
     plt.axis('off') 
+    display_indices = torch.linspace(1, len(tau) - 1, steps=num_images-1, dtype=torch.long)
     with torch.no_grad():
-        q=0
-        for i in reversed(range(T)):
+        #for i in reversed(range(T)):
+        for step_idx, i in enumerate(reversed(tau)):
             img = img.permute(0, 3, 1, 2)
-            
             eps_theta = model(img, torch.tensor([i], device=device).long())
-            
-            q+=1
-            img = p_sample(img, i, alphas, sigmas, eps_theta)
+            img = p_sample(img, N-step_idx-1, alphas, sigmas, eps_theta)
             img = torch.clamp(img, -1., 1.)
             img = img.permute(0, 2, 3, 1)
             img_display = img[0] * 0.5 + 0.5
             img_display = torch.clamp(img_display, 0., 1.)
-            if i % stepsize == 0:
-                idx = (T - i) // stepsize + 1
+            if step_idx in display_indices:
+                idx = torch.where(display_indices == step_idx)[0].item() + 2
                 plt.subplot(1, num_images, idx)
                 plt.imshow(img_display.detach().cpu().numpy(), cmap=display_color if display_color == 'gray' else None)
-                
                 plt.title(f"t={i}")
                 plt.axis('off')
         plt.tight_layout()

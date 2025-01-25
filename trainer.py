@@ -8,7 +8,7 @@ from ddim import q_sample, loss_function, sample_image
 
 
 class DiffusionTrainer:
-    def __init__(self, model, optimizer, train_loader, T, alphas, sigmas, device="cuda", img_size=28, num_channels = 1, dataset_name = "MNIST", display_color = 'gray', sample_interval=2):
+    def __init__(self, model, optimizer, train_loader, T, alphas, sigmas, N, device="cuda", img_size=28, num_channels = 1, dataset_name = "MNIST", display_color = 'gray', sample_interval=2):
         self.model = model.to(device)
         self.optimizer = optimizer
         self.train_loader = train_loader
@@ -16,6 +16,7 @@ class DiffusionTrainer:
         self.T = T
         self.alphas = alphas.to(device)
         self.sigmas = sigmas.to(device)
+        self.N = N,
         self.img_size = img_size
         self.num_channels = num_channels
         self.dataset_name = dataset_name
@@ -49,7 +50,7 @@ class DiffusionTrainer:
             if (epoch + 1) % self.sample_interval == 0:
                 self.model.eval()
                 with torch.no_grad():
-                    sample_image(self.T, self.img_size, self.alphas, self.sigmas, self.num_channels, self.dataset_name, self.display_color, self.model, epoch+1, self.device)
+                    sample_image(self.T, self.img_size, self.alphas, self.sigmas, self.N, self.num_channels, self.dataset_name, self.display_color, self.model, epoch+1, self.device)
                 self.model.train()  
             if (epoch + 1) % (self.sample_interval*10) == 0:
                 self.model.eval()

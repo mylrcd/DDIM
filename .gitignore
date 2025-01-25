@@ -1,5 +1,9 @@
 __pycache__/trainer.cpython-312.pyc
 __pycache__/unet.cpython-312.pyc
+__pycache__/unet.cpython-311.pyc
+__pycache__/ddim.cpython-311.pyc
+__pycache__/*.pyc
+__pycache__/*.pyc
 data/CIFAR/
 notebook/
 obs/
