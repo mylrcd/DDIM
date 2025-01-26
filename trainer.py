@@ -4,7 +4,7 @@ matplotlib.use('Agg')
 
 from tqdm import tqdm
 
-from ddim import q_sample, loss_function, sample_image
+from ddim import q_sample, loss_function, sample_image, plot_loss_curve
 
 
 class DiffusionTrainer:
@@ -26,6 +26,7 @@ class DiffusionTrainer:
 
     def train(self, epochs):
         dataset_size = len(self.train_loader.dataset)
+        tot_loss = []
         for epoch in range(epochs):
             self.model.train()
             epoch_loss = 0.0
@@ -44,7 +45,7 @@ class DiffusionTrainer:
                 epoch_loss += loss.item() * batch_size
 
             avg_train_loss = epoch_loss / dataset_size
-
+            tot_loss.append(avg_train_loss)
             print(f"[Epoch {epoch+1}/{epochs}] Average Training Loss: {avg_train_loss:.4f}")
 
             if (epoch + 1) % self.sample_interval == 0:
@@ -57,3 +58,7 @@ class DiffusionTrainer:
                 with torch.no_grad():
                     torch.save(self.model.state_dict(), f"models/model_{self.dataset_name}_ckpt_{epoch + 1}.pth")
                 self.model.train() 
+                
+        loss_curve_path = f"results/loss_curve_{self.dataset_name}.png"
+        plot_loss_curve(tot_loss, loss_curve_path)
+        print(f"Loss curve saved to {loss_curve_path}")

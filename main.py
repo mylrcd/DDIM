@@ -46,8 +46,9 @@ def get_dataloader(dataset_name, batch_size):
             transform=transform
         )
         
-        plane_indices = [i for i, label in enumerate(dataset.targets) if label == 0]
-        subset = Subset(dataset, plane_indices)
+        #plane_indices = [i for i, label in enumerate(dataset.targets) if label == 0]
+        #subset = Subset(dataset, plane_indices[:-8])
+        subset = dataset
         return DataLoader(subset, batch_size=batch_size, shuffle=True, num_workers=2)
 
     else:
@@ -71,7 +72,7 @@ def train_diffusion_model(dataset_name, epochs=1):
     
     num_channels = 1 if dataset_name == "MNIST" else 3
     img_size = 28 if dataset_name == "MNIST" else 32
-    batch_size = 64 if dataset_name == "MNIST" else 8
+    batch_size = 64 if dataset_name == "MNIST" else 64
     display_color = 'gray' if dataset_name == "MNIST" else None
     train_loader = get_dataloader(dataset_name, batch_size)
     alphas, sigmas = setup_diffusion_params(T, DEVICE, ETA)

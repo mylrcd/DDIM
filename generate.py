@@ -33,7 +33,7 @@ def generate_images(
     dataset_name="MNIST",
     device="cuda"
 ):
-    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_ckpt_200.pth"
+    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_ckpt_100.pth"
     num_channels = 1 if dataset_name == "MNIST" else 3
     img_size = 28 if dataset_name == "MNIST" else 32
     display_color = 'gray' if dataset_name == "MNIST" else None

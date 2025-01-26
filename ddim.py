@@ -98,3 +98,17 @@ def visualize_diffusion_step(noise_batch, alphas, num_steps, batch_size):
         axes[step].axis('off')
 
     plt.show()
+    
+    
+def plot_loss_curve(losses, save_path):
+        """Trace et sauvegarde la courbe d'évolution des pertes."""
+        plt.figure(figsize=(10, 6))
+        plt.plot(losses, label='Training Loss', color='blue', marker='o')
+        plt.title("Evolution of Training Loss")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(save_path)
+        plt.close()
