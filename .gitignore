@@ -105,3 +105,8 @@ models/model_CIFAR_ckpt_960.pth
 models/model_CIFAR_ckpt_970.pth
 models/model_CIFAR_ckpt_980.pth
 models/model_CIFAR_ckpt_990.pth
+
+models/model_CIFAR_all_ckpt_50.pth
+models/model_CIFAR_avion_ckpt_100.pth
+models/model_CIFAR_avion_ckpt_50.pth
+models/model_MNIST_ckpt_50.pth

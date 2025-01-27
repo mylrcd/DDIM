@@ -71,7 +71,7 @@ def sample_image(T, img_size, alphas, sigmas, N, num_channels, dataset_name, dis
                 plt.title(f"t={i}")
                 plt.axis('off')
         plt.tight_layout()
-        plt.savefig(f"results/sample_{dataset_name}_epoch_{epoch}.png")
+        plt.savefig(f"results/sample_{dataset_name}_all_epoch_{epoch}.png")
         plt.close()
 
 # forward diffusion

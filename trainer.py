@@ -48,17 +48,17 @@ class DiffusionTrainer:
             tot_loss.append(avg_train_loss)
             print(f"[Epoch {epoch+1}/{epochs}] Average Training Loss: {avg_train_loss:.4f}")
 
-            if (epoch + 1) % self.sample_interval == 0:
+            if (epoch + 1) % (self.sample_interval*10) == 0:
                 self.model.eval()
                 with torch.no_grad():
                     sample_image(self.T, self.img_size, self.alphas, self.sigmas, self.N, self.num_channels, self.dataset_name, self.display_color, self.model, epoch+1, self.device)
                 self.model.train()  
-            if (epoch + 1) % (self.sample_interval*10) == 0:
+            if (epoch + 1) % (self.sample_interval*50) == 0:
                 self.model.eval()
                 with torch.no_grad():
-                    torch.save(self.model.state_dict(), f"models/model_{self.dataset_name}_ckpt_{epoch + 1}.pth")
+                    torch.save(self.model.state_dict(), f"models/model_{self.dataset_name}_all_ckpt_{epoch + 1}.pth")
                 self.model.train() 
                 
-        loss_curve_path = f"results/loss_curve_{self.dataset_name}.png"
+        loss_curve_path = f"results/loss_curve_{self.dataset_name}_all.png"
         plot_loss_curve(tot_loss, loss_curve_path)
         print(f"Loss curve saved to {loss_curve_path}")

@@ -33,12 +33,12 @@ def generate_images(
     dataset_name="MNIST",
     device="cuda"
 ):
-    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_ckpt_100.pth"
+    ckpt_path="models/model_MNIST_ckpt_50.pth" if dataset_name == "MNIST" else "models/model_CIFAR_all_ckpt_50.pth"
     num_channels = 1 if dataset_name == "MNIST" else 3
     img_size = 28 if dataset_name == "MNIST" else 32
     display_color = 'gray' if dataset_name == "MNIST" else None
     model = UNet(num_channels).to(device)
-    model.load_state_dict(torch.load(ckpt_path, weights_only=False)) #map_location=torch.device('cpu')
+    model.load_state_dict(torch.load(ckpt_path, weights_only=False, map_location=torch.device('cpu'))) #map_location=torch.device('cpu')
     model.eval()
 
     sample_image(T, img_size, alphas, sigmas, N, num_channels, f"TEST_{dataset_name}", display_color, model, 1, device)

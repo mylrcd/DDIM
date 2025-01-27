@@ -50,8 +50,8 @@ class UNet(nn.Module):
     def __init__(self, im_channel):
         super().__init__()
         image_channel = im_channel  # Black-and-white images or color images
-        down_channel = (64, 128, 256, 512)
-        up_channel = (512, 256, 128, 64)
+        down_channel = (64, 128, 256, 512, 1024)
+        up_channel = (1024, 512, 256, 128, 64)
         out_dim = im_channel
         time_emb_dim = 32
 
